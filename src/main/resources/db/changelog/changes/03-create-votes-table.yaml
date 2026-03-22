@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 03-create-votes-table
+      author: letmerelax
+      changes:
+        - createTable:
+            tableName: votes
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: question_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: answer_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: player_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: votes
+            baseColumnNames: question_id
+            referencedTableName: questions
+            referencedColumnNames: id
+            constraintName: fk_votes_questions
+        - addForeignKeyConstraint:
+            baseTableName: votes
+            baseColumnNames: answer_id
+            referencedTableName: answers
+            referencedColumnNames: id
+            constraintName: fk_votes_answers

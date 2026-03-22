@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: 01-create-questions-table
+      author: letmerelax
+      changes:
+        - createTable:
+            tableName: questions
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: text
+                  type: varchar(255)
+              - column:
+                  name: section_id
+                  type: bigint
+                  constraints:
+                    nullable: false

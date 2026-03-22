@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 04-add-indexes-to-votes
+      author: letmerelax
+      changes:
+        - createIndex:
+            tableName: votes
+            indexName: idx_votes_player
+            columns:
+              - column:
+                  name: player_id
+
+        - createIndex:
+            tableName: votes
+            indexName: idx_votes_question
+            columns:
+              - column:
+                  name: question_id

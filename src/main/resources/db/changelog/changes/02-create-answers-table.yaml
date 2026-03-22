@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 02-create-answers-table
+      author: letmerelax
+      changes:
+        - createTable:
+            tableName: answers
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: question_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: text
+                  type: varchar(255)
+              - column:
+                  name: count
+                  type: bigint
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: answers
+            baseColumnNames: question_id
+            referencedTableName: questions
+            referencedColumnNames: id
+            constraintName: fk_answers_question
