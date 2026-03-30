@@ -1,9 +1,8 @@
 package vs.service.vote;
 
-import java.util.Map;
-import vs.dto.vote.QuestionStatsDto;
 import vs.dto.vote.SyncRequest;
+import vs.dto.vote.SyncResponse;
 
 public interface VoteService {
-    Map<Long, QuestionStatsDto> syncVotes(SyncRequest syncRequest);
+    SyncResponse syncVotes(SyncRequest syncRequest);
 }

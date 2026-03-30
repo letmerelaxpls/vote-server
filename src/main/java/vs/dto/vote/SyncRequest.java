@@ -5,6 +5,5 @@ import java.util.List;
 public record SyncRequest(
         String playerId,
         Long lastValidSectionId,
-        Long targetSectionId,
         List<SectionSyncDto> sectionsToSync) {
 }

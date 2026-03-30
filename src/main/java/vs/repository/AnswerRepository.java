@@ -1,6 +1,7 @@
 package vs.repository;
 
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -26,5 +27,5 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
     void incrementCounts(List<Long> answerIds);
 
     @EntityGraph(attributePaths = {"question"})
-    List<Answer> getAllByQuestionSectionId(Long sectionId);
+    List<Answer> getAllByQuestionSectionIdIn(Set<Long> sectionIds);
 }

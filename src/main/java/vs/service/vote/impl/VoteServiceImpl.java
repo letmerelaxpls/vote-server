@@ -2,13 +2,15 @@ package vs.service.vote.impl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vs.dto.vote.QuestionStatsDto;
+import vs.dto.question.QuestionStatsDto;
+import vs.dto.vote.SectionSyncDto;
 import vs.dto.vote.SyncRequest;
-import vs.exception.EntityNotFoundException;
+import vs.dto.vote.SyncResponse;
 import vs.mapper.VoteMapper;
 import vs.model.Answer;
 import vs.model.Vote;
@@ -25,26 +27,35 @@ public class VoteServiceImpl implements VoteService {
     private final VoteMapper voteMapper;
 
     @Override
-    public Map<Long, QuestionStatsDto> syncVotes(SyncRequest syncRequest) {
+    public SyncResponse syncVotes(SyncRequest syncRequest) {
         deleteVotes(syncRequest.playerId(), syncRequest.lastValidSectionId());
 
         syncData(syncRequest);
 
-        return getResultsForSection(syncRequest.targetSectionId());
+        Set<Long> sectionIds = syncRequest.sectionsToSync().stream()
+                .map(SectionSyncDto::sectionId)
+                .collect(Collectors.toSet());
+        return getSyncResponse(sectionIds);
     }
 
-    private Map<Long, QuestionStatsDto> getResultsForSection(Long sectionId) {
-        List<Answer> sectionAnswers = answerRepository.getAllByQuestionSectionId(sectionId);
-        if (sectionAnswers.isEmpty()) {
-            throw new EntityNotFoundException("Section with id: " + sectionId
-                    + " does not exist!");
-        }
+    private SyncResponse getSyncResponse(Set<Long> sectionIds) {
+        List<Answer> sectionToSyncAnswers = answerRepository.getAllByQuestionSectionIdIn(sectionIds);
 
-        return sectionAnswers.stream()
+        Map<Long, List<QuestionStatsDto>> sectionsStats =  sectionToSyncAnswers.stream()
                 .collect(Collectors.groupingBy(
-                        a -> a.getQuestion().getId(),
+                        a -> a.getQuestion().getSectionId(),
                         Collectors.collectingAndThen(
-                                Collectors.toList(), this::mapToQuestionStats)));
+                                Collectors.groupingBy(Answer::getQuestion),
+                                questionMap -> questionMap.entrySet().stream()
+                                        .map(entry -> {
+                                            Long questionId = entry.getKey().getId();
+                                            List<Answer> answers = entry.getValue();
+                                            return mapToQuestionStats(questionId, answers);
+                                        }).toList()
+                        )
+                )
+        );
+        return new SyncResponse(sectionsStats);
     }
 
     private void deleteVotes(String playerId, Long lastValidSectionId) {
@@ -62,23 +73,26 @@ public class VoteServiceImpl implements VoteService {
                     return vote;
                 })
                 .toList();
-        voteRepository.saveAllAndFlush(votes);
+
+        voteRepository.saveAll(votes);
+
         List<Long> answers = votes.stream()
                 .map(v -> v.getAnswer().getId())
                 .toList();
+
         answerRepository.incrementCounts(answers);
     }
 
-    private QuestionStatsDto mapToQuestionStats(List<Answer> answers) {
-        long total = answers.stream().mapToLong(Answer::getCount).sum();
+    private QuestionStatsDto mapToQuestionStats(Long questionId, List<Answer> answers) {
+        long totalVotes = answers.stream().mapToLong(Answer::getCount).sum();
 
         Map<Long, Double> percentages = answers.stream().collect(Collectors.toMap(
                 Answer::getId,
                 a -> {
-                    double percentage = (double) a.getCount() * 100 / total;
+                    double percentage = (double) a.getCount() * 100 / totalVotes;
 
                     return Math.round(percentage * 10.0) / 10.0;
                 }));
-        return new QuestionStatsDto(total, percentages);
+        return new QuestionStatsDto(questionId, totalVotes, percentages);
     }
 }
